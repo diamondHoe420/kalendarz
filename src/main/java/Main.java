@@ -4,8 +4,12 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class Main {
+
+    private static ArrayList<Event> events = new ArrayList<Event>();
+
     public static void main(String[] args) {
 
         String url = "https://www.kalbi.pl/kalendarz-swiat-nietypowych-2020";
@@ -25,9 +29,13 @@ public class Main {
             }
             HandleDateData(pUrl);
         }
+
+        for (Event e : events) {
+            System.out.println(e);
+        }
     }
 
-    public static void HandleDateData(String url) {
+    private static void HandleDateData(String url) {
         Document doc;
         try {
             doc = Jsoup.connect(url).get();
@@ -38,19 +46,25 @@ public class Main {
 
 
         try {
-            Element events = doc.getElementsByClass("calCard-ententa").first();
-            for (Element event : events.getElementsByTag("a") ) {
-                System.out.println(event.text());
-                String desc = GetEventDescription( event.attr("href") );
-                if (desc!="")
-                    System.out.println(desc);
+            Element eventElements = doc.getElementsByClass("calCard-ententa").first();
+            for (Element eventElement : eventElements.getElementsByTag("a") ) {
+                String name = eventElement.text();
+                String desc = GetEventDescription( eventElement.attr("href") );
+//                if (desc!="")
+//                    System.out.println(desc);
+
+                String date = doc.getElementById("data").val();
+
+
+                Event event = new Event( date, name, desc );
+                events.add(event);
             }
         } catch (NullPointerException e) {
             return;
         }
     }
 
-    public static String GetEventDescription(String url) {
+    private static String GetEventDescription(String url) {
         Document doc;
         try {
             doc = Jsoup.connect(url).get();
