@@ -3,6 +3,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -28,10 +29,7 @@ public class Main {
                 continue;
             }
             HandleDateData(pUrl);
-        }
-
-        for (Event e : events) {
-            System.out.println(e);
+            WriteEventsToFile();
         }
     }
 
@@ -58,10 +56,26 @@ public class Main {
 
                 Event event = new Event( date, name, desc );
                 events.add(event);
+                System.out.println(event);
             }
         } catch (NullPointerException e) {
             return;
         }
+    }
+
+    private static void WriteEventsToFile() {
+
+        String csvFileContents = "Data,Nazwa Święta,Opis\n";
+        for(Event o : events) {
+            csvFileContents += o.getDataRow();
+        }
+
+        try {
+            FileWriter myWriter = new FileWriter("święta.txt");
+            myWriter.write(csvFileContents);
+            myWriter.close();
+        } catch (IOException e) {  e.printStackTrace(); }
+
     }
 
     private static String GetEventDescription(String url) {

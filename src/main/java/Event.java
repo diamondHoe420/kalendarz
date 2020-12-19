@@ -20,7 +20,7 @@ public class Event {
                 '}';
     }
 
-    public String GetCsvRow() {
-        return date + "," + name + "," + desc;
+    public String getDataRow() {
+        return date + ";\t" + name + ";\t" + desc + '\n';
     }
 }
