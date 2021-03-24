@@ -1,71 +1,62 @@
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-
 import java.io.FileWriter;
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 public class Main {
 
-    private static ArrayList<Event> events = new ArrayList<Event>();
-
     public static void main(String[] args) {
 
-        String url = "https://www.kalbi.pl/kalendarz-swiat-nietypowych-2020";
-        Document doc;
-        try {
-            doc = Jsoup.connect(url).get();
-        } catch (IOException e) {
-            System.out.println("COULD NOT CONNECT TO " + url);
-            return;
-        }
+        long startTime = Instant.now().toEpochMilli();
+        ArrayList<Event> events = CalendarWebScraper.scrapeData();
+        long endTime = Instant.now().toEpochMilli();
+        long timeElapsed = endTime - startTime;
 
-        Elements days = doc.getElementsByClass("festCal_d");
-        for (Element el : days) {
-            String pUrl = el.getElementsByTag("a").attr("href");
-            if (pUrl=="") {
-                continue;
+        System.out.println("DANE POBRANO W " + timeElapsed/1000d + " SEKUND");
+
+        EventDatabaseWriter.initialize();
+
+        Scanner scan = new Scanner(System.in);
+
+        mainLoop:
+        while (true) {
+
+            System.out.println("WYBIERZ AKCJĘ");
+            System.out.println("1 - ZAPISZ DANE W BAZIE DANYCH");
+            System.out.println("2 - WYŚWIETL DANE Z BAZY DANYCH");
+            System.out.println("3 - ZAPISZ DANE DO PLIKU");
+            System.out.println("4 - WYJDŹ");
+
+
+            int choice = scan.nextInt();
+            switch (choice) {
+                case 1:
+                    EventDatabaseWriter.clearEventDataFromDatabase();
+                    EventDatabaseWriter.writeToEventsDatabase(events);
+                    System.out.println("BAZA DANYCH UAKTUALNIONA");
+                    break;
+                case 2:
+                    EventDatabaseWriter.displayEventDatabaseData();
+                    break;
+                case 3:
+                    WriteEventsToFile(events);
+                    System.out.println("ZAPISANO W PLIKU ŚWIĘTA.TXT");
+                    break;
+                case 4:
+                    break mainLoop;
+                default:
+                    System.out.println("BŁĘDNY KOD AKCJI");
+                    break;
             }
-            HandleDateData(pUrl);
-            WriteEventsToFile();
         }
+        scan.close();
     }
 
-    private static void HandleDateData(String url) {
-        Document doc;
-        try {
-            doc = Jsoup.connect(url).get();
-        } catch (IOException e) {
-            System.out.println("COULD NOT CONNECT TO " + url);
-            return;
-        }
 
+    private static void WriteEventsToFile(ArrayList<Event> events) {
 
-        try {
-            Element eventElements = doc.getElementsByClass("calCard-ententa").first();
-            for (Element eventElement : eventElements.getElementsByTag("a") ) {
-                String name = eventElement.text();
-                String desc = GetEventDescription( eventElement.attr("href") );
-//                if (desc!="")
-//                    System.out.println(desc);
-
-                String date = doc.getElementById("data").val();
-
-
-                Event event = new Event( date, name, desc );
-                events.add(event);
-                System.out.println(event);
-            }
-        } catch (NullPointerException e) {
-            return;
-        }
-    }
-
-    private static void WriteEventsToFile() {
-
-        String csvFileContents = "Data,Nazwa Święta,Opis\n";
+        String csvFileContents = "Data pobrania, Data,Nazwa Święta,Opis\n";
         for(Event o : events) {
             csvFileContents += o.getDataRow();
         }
@@ -75,21 +66,6 @@ public class Main {
             myWriter.write(csvFileContents);
             myWriter.close();
         } catch (IOException e) {  e.printStackTrace(); }
-
     }
 
-    private static String GetEventDescription(String url) {
-        Document doc;
-        try {
-            doc = Jsoup.connect(url).get();
-        } catch (IOException e) {
-            System.out.println("COULD NOT CONNECT TO " + url);
-            return "";
-        }
-        Element el = doc.getElementById("opis_nt");
-        if (el!=null) {
-            return el.text();
-        }
-        return "";
-    }
 }
